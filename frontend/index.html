@@ -1,0 +1,488 @@
+<!-- index.html -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Zafirus Search</title>
+
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  />
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  />
+
+</head>
+
+<body>
+
+  <div class="background-glow"></div>
+
+  <main class="app-shell">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+      <div>
+
+        <div class="logo-block">
+
+          <div class="logo-dot"></div>
+
+          <div>
+            <h1>Zafirus</h1>
+            <span>Smart Repository Search</span>
+          </div>
+
+        </div>
+
+        <nav class="sidebar-nav">
+
+          <button
+            class="nav-button active"
+            onclick="showView('searchView', this)"
+          >
+            Buscar
+          </button>
+
+          <button
+            class="nav-button"
+            onclick="showView('resultsView', this)"
+          >
+            Resultados
+          </button>
+
+          <button
+            class="nav-button"
+            onclick="showView('filtersView', this)"
+          >
+            Filtros avanzados
+          </button>
+
+        </nav>
+
+      </div>
+
+      <div class="sidebar-footer">
+        GitHub Search + Ranking Engine
+      </div>
+
+    </aside>
+
+    <!-- CONTENT -->
+
+    <section class="content-area">
+
+      <!-- SEARCH VIEW -->
+
+      <div
+        class="view active-view"
+        id="searchView"
+      >
+
+        <div class="view-header">
+
+          <div>
+            <h2>Buscar repositorios</h2>
+
+            <p>
+              Descubrí proyectos relevantes usando ranking inteligente.
+            </p>
+          </div>
+
+        </div>
+
+        <div class="glass-card compact-card">
+
+          <div class="inputs-grid">
+
+            <div class="input-group full-width">
+
+              <label>
+                Necesidad técnica
+              </label>
+
+              <input
+                id="query"
+                type="text"
+                placeholder="JWT authentication, AI agents, FastAPI boilerplate..."
+              />
+
+            </div>
+
+            <div class="input-group">
+
+              <label>
+                Lenguajes
+              </label>
+
+              <input
+                id="languages"
+                type="text"
+                placeholder="Python, TypeScript, Go"
+              />
+
+              <small>
+                Separados por comas
+              </small>
+
+            </div>
+
+          </div>
+
+          <div class="search-actions">
+
+            <button
+              class="secondary-button"
+              onclick="showView('filtersView')"
+            >
+              Configurar filtros
+            </button>
+
+            <button
+              class="search-button"
+              onclick="searchRepositories()"
+            >
+              Buscar repositorios
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- RESULTS VIEW -->
+
+      <div
+        class="view"
+        id="resultsView"
+      >
+
+        <div class="results-toolbar">
+
+          <div>
+
+            <h2>Resultados</h2>
+
+            <p>
+              Ranking multi-factor basado en calidad real
+            </p>
+
+          </div>
+
+          <div class="view-toggle">
+
+            <button
+              class="toggle-button active-toggle"
+              id="cardsToggle"
+              onclick="setResultsView('cards')"
+            >
+              ▥ Cards
+            </button>
+
+            <button
+              class="toggle-button"
+              id="listToggle"
+              onclick="setResultsView('list')"
+            >
+              ☰ Lista
+            </button>
+
+          </div>
+
+        </div>
+
+        <section
+          id="loadingSection"
+          class="loading-section hidden"
+        >
+
+          <div class="loader-ring"></div>
+
+          <h3>
+            Analizando repositorios...
+          </h3>
+
+          <p>
+            Consultando GitHub API y evaluando calidad real.
+          </p>
+
+        </section>
+
+        <div
+          id="results"
+          class="results-grid"
+        ></div>
+
+      </div>
+
+      <!-- FILTERS VIEW -->
+
+      <div
+        class="view"
+        id="filtersView"
+      >
+
+        <div class="view-header">
+
+          <div>
+
+            <h2>Filtros avanzados</h2>
+
+            <p>
+              Configuración experimental del ranking.
+            </p>
+
+          </div>
+
+        </div>
+
+        <div class="filters-layout">
+
+          <!-- LEFT -->
+
+          <div class="glass-card compact-card">
+
+            <div class="section-title">
+              Calidad mínima
+            </div>
+
+            <div class="input-group">
+
+              <label>
+                Stars mínimas
+              </label>
+
+              <input
+                type="number"
+                id="minStars"
+                value="50"
+              />
+
+            </div>
+
+            <div class="input-group">
+
+              <label>
+                Días máximos sin actividad
+              </label>
+
+              <input
+                type="number"
+                id="maxInactiveDays"
+                value="180"
+              />
+
+            </div>
+
+            <div class="checkbox-group">
+
+              <label class="switch-card">
+
+                <input
+                  type="checkbox"
+                  id="excludeArchived"
+                  checked
+                />
+
+                <span>
+                  Excluir archivados
+                </span>
+
+              </label>
+
+              <label class="switch-card">
+
+                <input
+                  type="checkbox"
+                  id="excludeLowQuality"
+                  checked
+                />
+
+                <span>
+                  Excluir low quality repos
+                </span>
+
+              </label>
+
+              <label class="switch-card">
+
+                <input
+                  type="checkbox"
+                  id="excludeForks"
+                />
+
+                <span>
+                  Excluir forks
+                </span>
+
+              </label>
+
+            </div>
+
+          </div>
+
+          <!-- RIGHT -->
+
+          <div class="glass-card compact-card">
+
+            <div class="weights-header">
+
+              <div class="section-title">
+                Prioridades del ranking
+              </div>
+
+              <button
+                class="reset-weights"
+                onclick="resetWeights()"
+                type="button"
+              >
+                Restablecer
+              </button>
+
+            </div>
+
+            <div class="slider-group">
+
+              <div class="slider-label">
+
+                <span>
+                  Actividad
+                </span>
+
+                <span id="activityValue">
+                  35%
+                </span>
+
+              </div>
+
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value="35"
+                id="activityWeight"
+              />
+
+            </div>
+
+            <div class="slider-group">
+
+              <div class="slider-label">
+
+                <span>
+                  Relevancia
+                </span>
+
+                <span id="relevanceValue">
+                  25%
+                </span>
+
+              </div>
+
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value="25"
+                id="relevanceWeight"
+              />
+
+            </div>
+
+            <div class="slider-group">
+
+              <div class="slider-label">
+
+                <span>
+                  Documentación
+                </span>
+
+                <span id="documentationValue">
+                  20%
+                </span>
+
+              </div>
+
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value="20"
+                id="documentationWeight"
+              />
+
+            </div>
+
+            <div class="slider-group">
+
+              <div class="slider-label">
+
+                <span>
+                  Popularidad
+                </span>
+
+                <span id="starsValue">
+                  20%
+                </span>
+
+              </div>
+
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value="20"
+                id="starsWeight"
+              />
+
+            </div>
+
+            <div class="weights-total">
+
+              Total configurado:
+
+              <strong id="weightsTotal">
+                100%
+              </strong>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+
+</body>
+</html>

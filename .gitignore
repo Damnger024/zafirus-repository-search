@@ -1,0 +1,15 @@
+# Entorno virtual
+venv/
+
+# Python cache
+__pycache__/
+
+# Variables sensibles
+.env
+backend/.env
+
+# VSCode
+.vscode/
+
+# Python compiled files
+*.pyc
