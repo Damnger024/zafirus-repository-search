@@ -46,7 +46,6 @@ POSITIVE_INTENT_TERMS = {
     "middleware"
 }
 
-
 def calculate_score(repo, query):
 
     score = 0

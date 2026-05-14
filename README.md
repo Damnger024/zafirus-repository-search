@@ -16,21 +16,35 @@ El objetivo del proyecto no es mostrar simplemente los repositorios más popular
 
 # Demo visual
 
-## GIF Demo
+## Search View 1
 
-![Demo](./assets/demo.gif)
-
----
-
-## Search View
-
-![Search View](./assets/search-view.png)
+![Search View](./assets/search-view-1.png)
 
 ---
 
-## Results View
+## Results View 1
 
-![Results View](./assets/results-view.png)
+![Results View](./assets/results-view-1.png)
+
+## Search View 2
+
+![Search View](./assets/search-view-2.png)
+
+---
+
+## Results View 2
+
+![Results View](./assets/results-view-2.png)
+
+## Search View 3
+
+![Search View](./assets/search-view-3.png)
+
+---
+
+## Results View 3
+
+![Results View](./assets/results-view-3.png)
 
 ---
 

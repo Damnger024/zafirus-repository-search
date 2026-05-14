@@ -26,7 +26,6 @@ QUERY_EXPANSIONS = {
     ]
 }
 
-
 def expand_query(query: str):
 
     expanded_terms = [query]
