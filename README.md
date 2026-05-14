@@ -119,19 +119,8 @@ Respuesta JSON
 ```text
 backend/
 │
-├── main.py
-│
 ├── api/
 │   └── routes.py
-│
-├── services/
-│   ├── github_service.py
-│   ├── query_builder.py
-│   └── query_expander.py
-│
-├── scoring/
-│   ├── scorer.py
-│   └── weights.py
 │
 ├── filters/
 │   └── repo_filters.py
@@ -139,11 +128,22 @@ backend/
 ├── models/
 │   └── repository.py
 │
-├── utils/
-│   ├── helpers.py
-│   └── explanation.py
+├── scoring/
+│   ├── scorer.py
+│   └── weights.py
 │
-└── .env
+├── services/
+│   ├── github_service.py
+│   ├── query_builder.py
+│   └── query_expander.py
+│
+├── utils/
+│   ├── explanation.py
+│   └── helpers.py
+│
+├── main.py
+├── requirements.txt
+└── .env.example
 ```
 
 ---
@@ -157,21 +157,31 @@ backend/
 - parseo de resultados
 - ranking final
 
+---
+
 ## `query_builder.py`
 
 - construcción del query para GitHub Search API
+
+---
 
 ## `query_expander.py`
 
 - expansión inteligente de keywords relacionadas
 
+---
+
 ## `scorer.py`
 
 - núcleo del ranking multi-factor
 
+---
+
 ## `repo_filters.py`
 
 - filtrado de repositorios irrelevantes o de baja calidad
+
+---
 
 ## `explanation.py`
 
@@ -188,11 +198,15 @@ backend/
 - Pydantic
 - Requests
 
+---
+
 ## Frontend
 
 - HTML
 - CSS
 - Vanilla JavaScript
+
+---
 
 ## APIs
 
@@ -420,26 +434,51 @@ POST /search
 
 ---
 
-# Instalación
+# Instalación y ejecución
 
 ## 1. Clonar repositorio
 
 ```bash
-git clone <repository_url>
-cd <repository_name>
+git clone https://github.com/Damnger024/zafirus-repository-search.git
 ```
 
 ---
 
-## 2. Crear entorno virtual
+## 2. Entrar al proyecto
+
+```bash
+cd zafirus-repository-search
+```
+
+---
+
+# Backend
+
+## 3. Entrar a la carpeta backend
+
+```bash
+cd backend
+```
+
+---
+
+## 4. Crear entorno virtual
+
+### Windows
 
 ```bash
 python -m venv venv
 ```
 
+### Linux / Mac
+
+```bash
+python3 -m venv venv
+```
+
 ---
 
-## 3. Activar entorno
+## 5. Activar entorno virtual
 
 ### Windows
 
@@ -455,7 +494,7 @@ source venv/bin/activate
 
 ---
 
-## 4. Instalar dependencias
+## 6. Instalar dependencias
 
 ```bash
 pip install -r requirements.txt
@@ -463,9 +502,25 @@ pip install -r requirements.txt
 
 ---
 
-## 5. Configurar variables de entorno
+## 7. Crear archivo `.env`
 
-Crear archivo `.env`:
+Crear un archivo llamado:
+
+```text
+.env
+```
+
+dentro de:
+
+```text
+backend/
+```
+
+---
+
+## 8. Configurar GitHub Token
+
+Dentro del `.env` agregar:
 
 ```env
 GITHUB_TOKEN=your_github_token
@@ -473,7 +528,31 @@ GITHUB_TOKEN=your_github_token
 
 ---
 
-## 6. Ejecutar backend
+## ¿Por qué se necesita un token?
+
+GitHub limita fuertemente las requests anónimas.
+
+Usar un token permite:
+
+- aumentar rate limits
+- evitar bloqueos rápidos
+- mejorar estabilidad del sistema
+
+---
+
+## ¿Cómo obtener un token?
+
+1. Ir a GitHub
+2. Settings
+3. Developer settings
+4. Personal access tokens
+5. Generate new token
+
+No se requieren permisos especiales para este proyecto.
+
+---
+
+## 9. Ejecutar backend
 
 ```bash
 uvicorn main:app --reload
@@ -487,12 +566,24 @@ http://127.0.0.1:8000
 
 ---
 
-## 7. Abrir frontend
+## 10. Swagger Docs
+
+FastAPI genera documentación automática en:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+---
+
+# Frontend
+
+## 11. Abrir frontend
 
 Abrir:
 
 ```text
-index.html
+frontend/index.html
 ```
 
 ---
