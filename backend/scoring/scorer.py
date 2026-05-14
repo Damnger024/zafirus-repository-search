@@ -14,6 +14,38 @@ LOW_QUALITY_TERMS = {
     "starter"
 }
 
+NEGATIVE_INTENT_TERMS = {
+    "demo",
+    "tutorial",
+    "example",
+    "boilerplate",
+    "starter",
+    "template",
+    "awesome",
+    "roadmap",
+    "resources",
+    "list",
+    "cracker",
+    "scanner",
+    "pentest",
+    "exploit",
+    "attack",
+    "ctf"
+}
+
+POSITIVE_INTENT_TERMS = {
+    "library",
+    "framework",
+    "sdk",
+    "extension",
+    "client",
+    "toolkit",
+    "implementation",
+    "wrapper",
+    "plugin",
+    "middleware"
+}
+
 
 def calculate_score(repo, query):
 
@@ -48,130 +80,353 @@ def calculate_score(repo, query):
         "irrelevant_fork": False
     }
 
-    # --- STARS ---
+    # =========================
+    # NORMALIZED TEXT
+    # =========================
+
+    query_lower = query.lower().strip()
+
+    query_tokens = tokenize_text(query)
+
+    repo_name = (repo.name or "").lower()
+    repo_description = (repo.description or "").lower()
+    repo_topics = " ".join(repo.topics).lower()
+
+    name_tokens = tokenize_text(repo.name or "")
+    description_tokens = tokenize_text(repo.description or "")
+    topic_tokens = tokenize_text(repo_topics)
+
+    # =========================
+    # STARS
+    # =========================
+
     stars = repo.stars
+    stars_score = 0
 
-    if stars >= 50000:
+    if stars >= 5000:
 
-        score += STARS_ELITE
-        breakdown["stars"] += STARS_ELITE
-
+        stars_score = 25
         signals["elite_popularity"] = True
 
-    elif stars >= 10000:
+    elif stars >= 2000:
 
-        score += STARS_HIGH
-        breakdown["stars"] += STARS_HIGH
-
+        stars_score = 20
         signals["high_popularity"] = True
 
-    elif stars >= 3000:
+    elif stars >= 1000:
 
-        score += STARS_MEDIUM
-        breakdown["stars"] += STARS_MEDIUM
-
+        stars_score = 17
         signals["medium_popularity"] = True
 
     elif stars >= 500:
 
-        score += STARS_LOW
-        breakdown["stars"] += STARS_LOW
+        stars_score = 14
+
+    elif stars >= 100:
+
+        stars_score = 10
 
     else:
 
-        score += STARS_MINIMAL
-        breakdown["stars"] += STARS_MINIMAL
+        stars_score = 5
 
-    # --- RELEVANCIA ---
+    score += stars_score
+    breakdown["stars"] += stars_score
 
-    query_tokens = tokenize_text(query)
+    # =========================
+    # RELEVANCE
+    # =========================
 
-    name_tokens = tokenize_text(repo.name or "")
-    description_tokens = tokenize_text(repo.description or "")
-    topic_tokens = tokenize_text(" ".join(repo.topics))
+    valid_query_tokens = [
+        token
+        for token in query_tokens
+        if len(token) >= 3
+    ]
 
-    relevance_score = 0
+    matched_tokens = 0.0
 
-    for token in query_tokens:
+    # separated relevance buckets
+    name_score = 0
+    topic_score = 0
+    description_score = 0
+    coverage_bonus = 0
+    intent_bonus = 0
+    phrase_score = 0
 
-        if len(token) < 3:
-            continue
+    # =========================
+    # EXACT PHRASE MATCH
+    # =========================
+
+    if query_lower in repo_name:
+        phrase_score += 14
+
+    elif query_lower in repo_topics:
+        phrase_score += 10
+
+    elif query_lower in repo_description:
+        phrase_score += 3
+
+    # =========================
+    # TOKEN MATCHES
+    # =========================
+
+    strong_matches = 0
+
+    for token in valid_query_tokens:
+
+        token_strength = 0
+
+        # repo name
+        if token in name_tokens:
+            name_score += 5
+            token_strength += 1.0
+
+        # repo topics
+        if token in topic_tokens:
+            topic_score += 4
+            token_strength += 0.9
+
+        # repo description
+        if token in description_tokens:
+            description_score += 0.5
+            token_strength += 0.15
+
+        if token_strength >= 0.9:
+            strong_matches += 1
+
+        matched_tokens += min(
+            token_strength,
+            1.0
+        )
+
+    # =========================
+    # COVERAGE BONUS
+    # =========================
+
+    coverage_ratio = 0
+
+    if valid_query_tokens:
+
+        coverage_ratio = (
+            matched_tokens / len(valid_query_tokens)
+        )
+
+        # casi todos los términos encontrados
+        if coverage_ratio >= 0.85:
+            coverage_bonus = 8
+
+        # buena coincidencia general
+        elif coverage_ratio >= 0.60:
+            coverage_bonus = 5
+
+        # coincidencia usable
+        elif coverage_ratio >= 0.35:
+            coverage_bonus = 2
+
+    # =========================
+    # STRONG MATCH BONUS
+    # =========================
+
+    if strong_matches >= len(valid_query_tokens):
+        coverage_bonus += 6
+
+    elif strong_matches >= 2:
+        coverage_bonus += 4
+
+    elif strong_matches >= 1:
+        coverage_bonus += 2
+
+    # =========================
+    # TOPICAL FOCUS BONUS
+    # =========================
+
+    name_match_count = 0
+    topic_match_count = 0
+
+    for token in valid_query_tokens:
 
         if token in name_tokens:
-            relevance_score += 12
+            name_match_count += 1
 
         if token in topic_tokens:
-            relevance_score += 8
+            topic_match_count += 1
 
-        if token in description_tokens:
-            relevance_score += 5
-    
-    relevance_score = min(relevance_score, RELEVANCE_FULL_MATCH)
+    # el nombre define muchísimo el propósito
+    name_score += name_match_count * 2
+
+    # topics ayudan bastante
+    topic_score += topic_match_count * 2
+
+    # =========================
+    # REPOSITORY INTENT SIGNALS
+    # =========================
+
+    repo_text_tokens = set(
+        name_tokens
+        + description_tokens
+        + topic_tokens
+    )
+
+    positive_intent_matches = 0
+    negative_intent_matches = 0
+
+    POSITIVE_INTENT_TERMS = {
+        "library",
+        "framework",
+        "sdk",
+        "extension",
+        "client",
+        "toolkit",
+        "implementation",
+        "wrapper",
+        "plugin",
+        "middleware"
+    }
+
+    for term in POSITIVE_INTENT_TERMS:
+
+        if term in repo_text_tokens:
+            positive_intent_matches += 1
+
+    for term in NEGATIVE_INTENT_TERMS:
+
+        if term in repo_text_tokens:
+            negative_intent_matches += 1
+
+    intent_bonus += positive_intent_matches * 1.5
+    intent_bonus -= negative_intent_matches * 4
+
+    # =========================
+    # NORMALIZE BUCKETS
+    # =========================
+
+    name_score = min(name_score, 12)
+    topic_score = min(topic_score, 10)
+    description_score = min(description_score, 3)
+    coverage_bonus = min(coverage_bonus, 10)
+
+    intent_bonus = max(min(intent_bonus, 6), -10)
+
+    phrase_score = min(phrase_score, 14)
+
+    # =========================
+    # LOW QUALITY MULTIPLIER
+    # =========================
+
+    low_quality_matches = 0
+
+    for term in LOW_QUALITY_TERMS:
+
+        if term in repo_text_tokens:
+            low_quality_matches += 1
+
+    quality_multiplier = 1.0
+
+    if low_quality_matches >= 1:
+        quality_multiplier = 0.82
+
+    if low_quality_matches >= 2:
+        quality_multiplier = 0.7
+
+    # =========================
+    # FINAL RELEVANCE SCORE
+    # =========================
+
+    raw_relevance_score = (
+        name_score
+        + topic_score
+        + description_score
+        + coverage_bonus
+        + intent_bonus
+        + phrase_score
+    )
+
+    relevance_score = (
+        raw_relevance_score
+        * quality_multiplier
+    )
+
+    relevance_score = round(
+        max(
+            0,
+            min(
+                relevance_score,
+                RELEVANCE_FULL_MATCH
+            )
+        )
+    )
 
     score += relevance_score
     breakdown["relevance"] += relevance_score
 
-    if relevance_score >= 20:
+    # =========================
+    # RELEVANCE SIGNALS
+    # =========================
+
+    if relevance_score >= 26:
         signals["full_match"] = True
 
-    elif relevance_score > 0:
+    elif relevance_score >= 12:
         signals["partial_match"] = True
 
-    # --- DOCUMENTATION ---
+    # =========================
+    # DOCUMENTATION
+    # =========================
 
     documentation_score = 0
 
     if repo.description and len(repo.description.strip()) >= 20:
-        documentation_score += 8
+        documentation_score += 5
 
     if repo.topics and len(repo.topics) >= 3:
-        documentation_score += 6
+        documentation_score += 4
 
     if repo.homepage:
-        documentation_score += 6
+        documentation_score += 3
 
     score += documentation_score
     breakdown["documentation"] += documentation_score
 
-    if documentation_score >= 12:
+    if documentation_score >= 8:
         signals["good_documentation"] = True
 
-    # --- ACTIVIDAD REAL ---
+    # =========================
+    # ACTIVITY
+    # =========================
+
     days_inactive = calculate_days_inactive(
         repo.last_update
     )
 
     activity_score = 0
 
-    from .weights import (
-        ACTIVITY_REALLY_RECENT,
-        ACTIVITY_VERY_RECENT,
-        ACTIVITY_RECENT,
-        ACTIVITY_MODERATE,
-        ACTIVITY_LOW,
-    )
-
     if days_inactive <= 30:
-        activity_score = ACTIVITY_REALLY_RECENT
+
+        activity_score = 18
         signals["very_recent_activity"] = True
 
     elif days_inactive <= 75:
-        activity_score = ACTIVITY_VERY_RECENT
+
+        activity_score = 14
         signals["very_recent_activity"] = True
 
     elif days_inactive <= 150:
-        activity_score = ACTIVITY_RECENT
+
+        activity_score = 10
         signals["recent_activity"] = True
 
     elif days_inactive <= 230:
-        activity_score = ACTIVITY_MODERATE
+
+        activity_score = 6
         signals["moderate_activity"] = True
 
     elif days_inactive <= 365:
-        activity_score = ACTIVITY_LOW
+
+        activity_score = 2
         signals["low_activity"] = True
 
     else:
+
         activity_score -= INACTIVITY_PENALTY
         signals["low_activity"] = True
 
@@ -179,19 +434,28 @@ def calculate_score(repo, query):
 
     if activity_score >= 0:
         breakdown["activity"] += activity_score
+
     else:
         breakdown["penalties"] += activity_score
 
-    # --- LOW QUALITY REPO DETECTION ---
+    # =========================
+    # LOW QUALITY DETECTION
+    # =========================
 
     repo_name_tokens = tokenize_text(repo.name)
 
-    if any(token in LOW_QUALITY_TERMS for token in repo_name_tokens):
+    if any(
+        token in LOW_QUALITY_TERMS
+        for token in repo_name_tokens
+    ):
 
         score -= LOW_QUALITY_REPO_PENALTY
         breakdown["penalties"] -= LOW_QUALITY_REPO_PENALTY
 
-    # --- FORKS ---
+    # =========================
+    # FORKS
+    # =========================
+
     if repo.fork:
 
         score -= FORK_PENALTY
@@ -205,46 +469,70 @@ def calculate_score(repo, query):
             signals["relevant_fork"] = True
 
         else:
+
             signals["irrelevant_fork"] = True
 
-    # --- CONFIANZA ---
+    # =========================
+    # AUTHORITY ADJUSTMENT
+    # =========================
+
+    authority_multiplier = 1.0
+
+    if repo.stars < 50:
+        authority_multiplier = 0.88
+
+    elif repo.stars < 150:
+        authority_multiplier = 0.93
+
+    score *= authority_multiplier
+
+    # =========================
+    # CONFIDENCE
+    # =========================
 
     confidence = "low"
 
-    positive_signals = 0
-
-    if (
-        signals["full_match"]
-        or signals["partial_match"]
-    ):
-        positive_signals += 1
-
-    if (
-        signals["very_recent_activity"]
-        or signals["recent_activity"]
-    ):
-        positive_signals += 1
-
-    if signals["good_documentation"]:
-        positive_signals += 1
-
-    if (
-        signals["medium_popularity"]
-        or signals["high_popularity"]
-        or signals["elite_popularity"]
-    ):
-        positive_signals += 1
-
-    if score >= 70 and positive_signals >= 3:
+    if relevance_score >= 28 and score >= 70:
         confidence = "high"
 
-    elif score >= 40 and positive_signals >= 2:
+    elif relevance_score >= 18 and score >= 45:
         confidence = "medium"
 
-    # --- RETURN ---
+    # =========================
+    # ROUNDING
+    # =========================
+
+    score = round(score, 1)
+    relevance_score = round(relevance_score, 1)
+
+    breakdown["relevance"] = relevance_score
+
+    # =========================
+    # SCORE NORMALIZATION
+    # =========================
+
+    normalized_score = score
+
+    if normalized_score >= 65:
+        normalized_score += 8
+
+    elif normalized_score >= 50:
+        normalized_score += 5
+
+    elif normalized_score >= 35:
+        normalized_score += 2
+
+    normalized_score = min(
+        round(normalized_score),
+        100
+    )
+
+    # =========================
+    # RETURN
+    # =========================
 
     return {
-        "total_score": max(score, 0),
+        "total_score": normalized_score,
         "confidence": confidence,
         "breakdown": breakdown,
         "signals": signals

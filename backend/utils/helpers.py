@@ -1,7 +1,6 @@
 from datetime import datetime
 import re
 
-
 def calculate_days_inactive(last_update: str):
 
     last_update_date = datetime.strptime(

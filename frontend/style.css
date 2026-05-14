@@ -656,3 +656,35 @@ SCORE STATES
   background:rgba(239,68,68,.15);
   color:#f87171;
 }
+
+/* =========================
+SCORE BREAKDOWN
+========================= */
+
+.score-breakdown{
+ display:flex;
+ flex-direction:column;
+ gap:10px;
+ margin-bottom:18px;
+ padding:14px;
+ border-radius:16px;
+ background:#0f0f13;
+ border:1px solid #23232b;
+}
+
+.breakdown-item{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ font-size:13px;
+ color:#c7c7cf;
+}
+
+.breakdown-item strong{
+ color:white;
+ font-size:13px;
+}
+
+.breakdown-item.penalty strong{
+ color:#f87171;
+}

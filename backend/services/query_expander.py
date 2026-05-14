@@ -1,14 +1,9 @@
 QUERY_EXPANSIONS = {
-
-
     "auth": [
-        "authentication",
-        "authorization",
         "jwt",
         "oauth",
-        "security"
+        "authorization"
     ],
-
 
     "api": [
         "rest",
@@ -16,14 +11,12 @@ QUERY_EXPANSIONS = {
         "http"
     ],
 
-
     "database": [
         "sql",
         "postgres",
         "mysql",
         "orm"
     ],
-
 
     "ai": [
         "machine-learning",
@@ -33,15 +26,21 @@ QUERY_EXPANSIONS = {
     ]
 }
 
+
 def expand_query(query: str):
 
     expanded_terms = [query]
 
-    query_lower = query.lower()
+    query_tokens = query.lower().split()
 
     for keyword, expansions in QUERY_EXPANSIONS.items():
 
-        if keyword in query_lower:
-            expanded_terms.extend(expansions)
+        # MATCH EXACTO DE TOKEN
+        if keyword in query_tokens:
+
+            for expansion in expansions:
+
+                if expansion not in expanded_terms:
+                    expanded_terms.append(expansion)
 
     return expanded_terms

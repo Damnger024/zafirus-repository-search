@@ -372,19 +372,60 @@ function renderResults(repositories) {
       </div>
 
       <div class="result-meta">
+      <span>
+      ⭐ ${repo.stars?.toLocaleString() || 0}
+      </span>
 
-        <span>
-          ⭐ ${repo.stars?.toLocaleString() || 0}
-        </span>
+      <span>
+      ${getConfidenceLabel(repo.confidence)}
+      </span>
 
-        <span>
-          ${getConfidenceLabel(repo.confidence)}
-        </span>
+      <span>
+      ${repo.last_update?.slice(0, 10) || "Unknown"}
+      </span>
+      </div>
 
-        <span>
-          ${repo.last_update?.slice(0, 10) || "Unknown"}
-        </span>
+      <div class="score-breakdown">
+      <div class="breakdown-item">
+        <span>Actividad</span>
+        <strong>
+        ${repo.score_breakdown?.activity || 0}/30
+        </strong>
+      </div>
 
+      <div class="breakdown-item">
+        <span>Relevancia</span>
+        <strong>
+        ${repo.score_breakdown?.relevance || 0}/35
+        </strong>
+      </div>
+
+      <div class="breakdown-item">
+        <span>Documentación</span>
+        <strong>
+        ${repo.score_breakdown?.documentation || 0}/20
+        </strong>
+      </div>
+
+      <div class="breakdown-item">
+        <span>Popularidad</span>
+        <strong>
+        ${repo.score_breakdown?.stars || 0}/25
+        </strong>
+      </div>
+
+      ${
+        repo.score_breakdown?.penalties
+        ? `
+        <div class="breakdown-item penalty">
+          <span>Penalizaciones</span>
+          <strong>
+          ${repo.score_breakdown.penalties}
+          </strong>
+        </div>
+        `
+        : ""
+      }
       </div>
 
       <div class="tags-row">
